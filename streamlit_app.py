@@ -22,62 +22,122 @@ def mean_squared_error(y_true, y_pred):
 # App layout
 # ---------------------------------------------------------
 
-st.title("Basic Science Exercise 3 — Regression Demo (No Sklearn)")
-
-st.write("Upload a dataset, choose your target, and run a lightweight regression model. Do not upload private or sensitive data.")
+st.title("Basic Science Exercise 3 — Regression Demo")
+st.write("Use sample data or upload your own CSV. Choose a target, model type, and noise settings for sample data.")
 
 # ---------------------------------------------------------
-# File upload
+# Data Source
 # ---------------------------------------------------------
 
-uploaded = st.file_uploader("Upload a CSV file", type=["csv"])
+source = st.radio("Choose data source", ["Use sample data", "Upload CSV"], horizontal=True)
 
-if uploaded:
-    df = pd.read_csv(uploaded)
-    st.write("### Data Preview")
+df = None
+
+if source == "Use sample data":
+    num_samples = st.slider("Number of samples", 50, 500, 100, step=10)
+    noise_level = st.slider("Noise level (std deviation)", 0.0, 5.0, 1.0, step=0.1)
+    x = np.linspace(0, 10, num_samples)
+    noise = np.random.normal(0, noise_level, num_samples)
+
+    df = pd.DataFrame({
+        "x": x,
+        "noise": noise,
+    })
+    df["y"] = 3 * x + 5 + noise  # linear relation
+
+    st.write("### Sample Data Preview")
     st.dataframe(df)
 
+else:
+    uploaded = st.file_uploader("Upload CSV", type=["csv"])
+    if uploaded:
+        df = pd.read_csv(uploaded)
+        st.write("### Uploaded Data Preview")
+        st.dataframe(df)
+
+# ---------------------------------------------------------
+# Modeling Controls
+# ---------------------------------------------------------
+
+if df is not None:
+
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-
     if not numeric_cols:
-        st.error("No numeric columns found in this file.")
-    else:
-        target = st.selectbox("Select target column", numeric_cols)
+        st.error("No numeric columns found.")
+        st.stop()
 
-        if target:
-            features = [c for c in numeric_cols if c != target]
+    target = st.selectbox("Select target column", numeric_cols)
+    features = [c for c in numeric_cols if c != target]
 
-            if not features:
-                st.error("No numeric feature columns available.")
-            else:
-                X = df[features].values
-                y = df[target].values.reshape(-1, 1)
+    if not features:
+        st.error("No numeric feature columns available.")
+        st.stop()
 
-                test_size = st.slider("Test size (%)", 10, 50, 20)
-                split = int(len(df) * (1 - test_size / 100))
+    X = df[features].values
+    y = df[target].values.reshape(-1, 1)
 
-                X_train, X_test = X[:split], X[split:]
-                y_train, y_test = y[:split], y[split:]
+    # Model selection
+    st.write("### Model Selection")
+    model_type = st.selectbox("Choose model", [
+        "Simple Linear Regression",
+        "Polynomial Regression (Degree 2)",
+        "Polynomial Regression (Degree 3)"
+    ])
 
-                w = simple_regression_model(X_train, y_train)
+    # Split
+    test_size = st.slider("Test size (%)", 10, 50, 20)
+    split = int(len(df) * (1 - test_size / 100))
 
-                y_pred = predict(w, X_test)
-                mse = mean_squared_error(y_test, y_pred)
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
 
-                st.write("### Model Performance")
-                st.write(f"Mean Squared Error (MSE): {mse:.4f}")
+    # ---------------------------------------------------------
+    # Model training
+    # ---------------------------------------------------------
 
-                chart_df = pd.DataFrame({
-                    "Actual": y_test.flatten(),
-                    "Predicted": y_pred.flatten()
-                })
+    if model_type == "Simple Linear Regression":
+        X_train_model = X_train
+        X_test_model = X_test
 
-                st.write("### Prediction Comparison")
-                st.line_chart(chart_df)
+    elif model_type == "Polynomial Regression (Degree 2)":
+        X_train_model = np.c_[X_train, X_train ** 2]
+        X_test_model = np.c_[X_test, X_test ** 2]
 
-                st.write("### Correlation Matrix")
-                corr = df[numeric_cols].corr()
-                st.dataframe(corr.style.background_gradient(cmap="Blues"))
+    elif model_type == "Polynomial Regression (Degree 3)":
+        X_train_model = np.c_[X_train, X_train ** 2, X_train ** 3]
+        X_test_model = np.c_[X_test, X_test ** 2, X_test ** 3]
+
+    w = simple_regression_model(X_train_model, y_train)
+    y_pred = predict(w, X_test_model)
+
+    mse = mean_squared_error(y_test, y_pred)
+
+    st.write("### Model Performance")
+    st.write(f"Mean Squared Error (MSE): {mse:.4f}")
+
+    # Linear vs Polynomial comparison plot for sample data
+    if source == "Use sample data":
+        st.write("### Linear vs Polynomial Comparison")
+        y_pred_linear = predict(simple_regression_model(X_train, y_train), X_test)
+        comparison_df = pd.DataFrame({
+            "Actual": y_test.flatten(),
+            "Linear Predicted": y_pred_linear.flatten(),
+            "Poly Predicted": y_pred.flatten()
+        })
+        st.line_chart(comparison_df)
+
+    # Regular prediction chart
+    st.write("### Prediction Comparison")
+    chart_df = pd.DataFrame({
+        "Actual": y_test.flatten(),
+        "Predicted": y_pred.flatten()
+    })
+    st.line_chart(chart_df)
+
+    # Correlation matrix
+    st.write("### Correlation Matrix")
+    corr = df[numeric_cols].corr()
+    st.dataframe(corr.style.background_gradient(cmap="Blues"))
 
 else:
-    st.info("Upload a CSV file to begin.")
+    st.info("Upload a CSV or choose sample data to continue.")
