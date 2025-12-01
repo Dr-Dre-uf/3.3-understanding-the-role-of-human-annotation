@@ -9,32 +9,21 @@ import scipy.stats as stats
 
 # ---------------------------------------------------------
 
-def simple_linear_regression(X_train, y_train):
+def simple_regression_model(X_train, y_train):
+"""
+Lightweight regression model:
+y = Xw + b using the Normal Equation.
+"""
 X_b = np.c_[np.ones((X_train.shape[0], 1)), X_train]
-w = np.linalg.pinv(X_b.T @ X_b) @ (X_b.T @ y_train)
-return w
-
-def simple_ridge_regression(X_train, y_train, alpha=1.0):
-X_b = np.c_[np.ones((X_train.shape[0], 1)), X_train]
-I = np.eye(X_b.shape[1])
-I[0,0] = 0
-w = np.linalg.pinv(X_b.T @ X_b + alpha * I) @ (X_b.T @ y_train)
+w = np.linalg.pinv(X_b.T.dot(X_b)).dot(X_b.T).dot(y_train)
 return w
 
 def predict(w, X):
 X_b = np.c_[np.ones((X.shape[0], 1)), X]
 return X_b.dot(w)
 
-def mse(y_true, y_pred):
+def mean_squared_error(y_true, y_pred):
 return np.mean((y_true - y_pred) ** 2)
-
-def icc(values):
-n, k = values.shape
-MSB = np.var(values.mean(axis=1), ddof=1) * k
-MSW = np.mean(np.var(values, axis=1, ddof=1))
-ICC1 = (MSB - MSW) / (MSB + (k - 1) * MSW)
-ICC2 = (MSB - MSW) / MSB
-return ICC1, ICC2
 
 # ---------------------------------------------------------
 
@@ -42,17 +31,12 @@ return ICC1, ICC2
 
 # ---------------------------------------------------------
 
-st.title("Basic Science Exercise 3 — Enhanced Regression Demo (No Sklearn)")
+st.title("Basic Science Exercise 3 — Regression Demo (No Sklearn)")
 
-st.sidebar.header("Instructions")
-st.sidebar.write("""
-
-1. Upload a CSV file
-2. Select target variable
-3. Choose model type
-4. View performance, residuals, correlations, ICC
-   """)
-   st.sidebar.warning("Do not upload private or sensitive data.")
+st.write("""
+Upload a dataset, choose your target, and run a lightweight regression model.
+**Do not upload private, confidential, or sensitive data.**
+""")
 
 # ---------------------------------------------------------
 
@@ -60,90 +44,65 @@ st.sidebar.write("""
 
 # ---------------------------------------------------------
 
-uploaded = st.file_uploader("Upload CSV", type=["csv"])
+uploaded = st.file_uploader("Upload a CSV file", type=["csv"])
 
 if uploaded:
+# Load dataset
 df = pd.read_csv(uploaded)
+
+```
 st.write("### Data Preview")
 st.dataframe(df)
 
-```
-# Cleaning Options
-st.write("### Data Cleaning")
-if st.checkbox("Drop rows with missing values"):
-    df = df.dropna()
-
-if st.checkbox("Standardize numeric columns (z-score)"):
-    numeric = df.select_dtypes(include=[np.number]).columns
-    df[numeric] = (df[numeric] - df[numeric].mean()) / df[numeric].std()
-
-# Feature Selection
+# Numeric columns only
 numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-target = st.selectbox("Select Target", numeric_cols)
 
-if target:
-    features = [c for c in numeric_cols if c != target]
-    X = df[features].values
-    y = df[target].values.reshape(-1, 1)
+if not numeric_cols:
+    st.error("No numeric columns found in this file.")
+else:
+    target = st.selectbox("Select target column", numeric_cols)
 
-    # Train/Test Split
-    test_size = st.slider("Test Split (%)", 10, 50, 20)
-    split = int(len(df) * (1 - test_size/100))
-    X_train, X_test = X[:split], X[split:]
-    y_train, y_test = y[:split], y[split:]
+    if target:
+        features = [c for c in numeric_cols if c != target]
 
-    # Model Selection
-    model_choice = st.selectbox("Model Type", ["Linear Regression", "Ridge Regression"])
-    alpha = None
-    if model_choice == "Ridge Regression":
-        alpha = st.slider("Ridge Alpha", 0.1, 10.0, 1.0)
+        if not features:
+            st.error("No numeric feature columns available.")
+        else:
+            X = df[features].values
+            y = df[target].values.reshape(-1, 1)
 
-    # Train
-    if model_choice == "Linear Regression":
-        w = simple_linear_regression(X_train, y_train)
-    else:
-        w = simple_ridge_regression(X_train, y_train, alpha)
+            # Train/test split
+            st.write("### Train/Test Split")
+            test_size = st.slider("Test size (%)", 10, 50, 20)
+            split = int(len(df) * (1 - test_size / 100))
 
-    # Predictions
-    y_pred = predict(w, X_test)
-    error = mse(y_test, y_pred)
+            X_train, X_test = X[:split], X[split:]
+            y_train, y_test = y[:split], y[split:]
 
-    st.write("### Model Performance")
-    st.write(f"**MSE:** {error:.5f}")
+            # Train model
+            w = simple_regression_model(X_train, y_train)
 
-    # Feature Importance
-    st.write("### Feature Importance (Absolute Weights)")
-    importance = pd.DataFrame({
-        "Feature": ["Intercept"] + features,
-        "Weight": w.flatten()
-    })
-    st.bar_chart(importance.set_index("Feature"))
+            # Predictions
+            y_pred = predict(w, X_test)
+            mse = mean_squared_error(y_test, y_pred)
 
-    # Prediction vs Actual
-    st.write("### Predictions vs Actual")
-    comp_df = pd.DataFrame({"Actual": y_test.flatten(), "Predicted": y_pred.flatten()})
-    st.line_chart(comp_df)
+            st.write("### Model Performance")
+            st.write(f"**Mean Squared Error (MSE):** {mse:.4f}")
 
-    # Residuals
-    st.write("### Residual Plot")
-    residuals = y_test.flatten() - y_pred.flatten()
-    st.line_chart(pd.DataFrame({"Residuals": residuals}))
+            # Prediction chart
+            chart_df = pd.DataFrame({
+                "Actual": y_test.flatten(),
+                "Predicted": y_pred.flatten()
+            })
 
-    # Correlation Matrix
-    st.write("### Correlation Matrix")
-    corr = df[numeric_cols].corr()
-    st.dataframe(corr.style.background_gradient(cmap="Blues"))
+            st.write("### Prediction Comparison")
+            st.line_chart(chart_df)
 
-    # ICC Section
-    st.write("### ICC (If multiple columns represent repeated measures)")
-    icc_cols = st.multiselect("Select columns for ICC", numeric_cols)
-
-    if len(icc_cols) > 1:
-        matrix = df[icc_cols].dropna().values
-        ICC1, ICC2 = icc(matrix)
-        st.write(f"**ICC(1):** {ICC1:.4f}")
-        st.write(f"**ICC(2):** {ICC2:.4f}")
+            # Correlation matrix
+            st.write("### Correlation Matrix")
+            corr = df[numeric_cols].corr()
+            st.dataframe(corr.style.background_gradient(cmap="Blues"))
 ```
 
 else:
-st.info("Upload a file to begin.")
+st.info("Upload a CSV file to begin.")
