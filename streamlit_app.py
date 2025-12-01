@@ -23,7 +23,7 @@ def mean_squared_error(y_true, y_pred):
 # ---------------------------------------------------------
 
 st.title("Basic Science Exercise 3 — Regression Demo")
-st.write("Use sample data or upload your own CSV. Choose a target, model type, and noise settings for sample data.")
+st.write("Use sample data or upload your own CSV. Choose a target, model type, and noise settings for sample data. Do not upload private or sensitive data.")
 
 # ---------------------------------------------------------
 # Data Source
@@ -134,10 +134,10 @@ if df is not None:
     })
     st.line_chart(chart_df)
 
-    # Correlation matrix
+    # Correlation matrix (no styling, lightweight)
     st.write("### Correlation Matrix")
     corr = df[numeric_cols].corr()
-    st.dataframe(corr.style.background_gradient(cmap="Blues"))
+    st.dataframe(corr)
 
 else:
     st.info("Upload a CSV or choose sample data to continue.")
