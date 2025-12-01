@@ -22,7 +22,7 @@ def mean_squared_error(y_true, y_pred):
 # App layout
 # ---------------------------------------------------------
 
-st.title("Basic Science Exercise 3 — Regression Demo")
+st.title("Understanding the Role of Human Annotation")
 st.write("Use sample data or upload your own CSV. Choose a target, model type, and noise settings for sample data. Do not upload private or sensitive data.")
 
 # ---------------------------------------------------------
