@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 
 # ---------------------------------------------------------
 
@@ -10,10 +9,6 @@ import scipy.stats as stats
 # ---------------------------------------------------------
 
 def simple_regression_model(X_train, y_train):
-"""
-Lightweight regression model:
-y = Xw + b using the Normal Equation.
-"""
 X_b = np.c_[np.ones((X_train.shape[0], 1)), X_train]
 w = np.linalg.pinv(X_b.T.dot(X_b)).dot(X_b.T).dot(y_train)
 return w
@@ -33,10 +28,7 @@ return np.mean((y_true - y_pred) ** 2)
 
 st.title("Basic Science Exercise 3 — Regression Demo (No Sklearn)")
 
-st.write("""
-Upload a dataset, choose your target, and run a lightweight regression model.
-**Do not upload private, confidential, or sensitive data.**
-""")
+st.write("Upload a dataset, choose your target, and run a lightweight regression model. Do not upload private or sensitive data.")
 
 # ---------------------------------------------------------
 
@@ -47,14 +39,11 @@ Upload a dataset, choose your target, and run a lightweight regression model.
 uploaded = st.file_uploader("Upload a CSV file", type=["csv"])
 
 if uploaded:
-# Load dataset
 df = pd.read_csv(uploaded)
-
-```
 st.write("### Data Preview")
 st.dataframe(df)
 
-# Numeric columns only
+```
 numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
 if not numeric_cols:
@@ -71,25 +60,20 @@ else:
             X = df[features].values
             y = df[target].values.reshape(-1, 1)
 
-            # Train/test split
-            st.write("### Train/Test Split")
             test_size = st.slider("Test size (%)", 10, 50, 20)
             split = int(len(df) * (1 - test_size / 100))
 
             X_train, X_test = X[:split], X[split:]
             y_train, y_test = y[:split], y[split:]
 
-            # Train model
             w = simple_regression_model(X_train, y_train)
 
-            # Predictions
             y_pred = predict(w, X_test)
             mse = mean_squared_error(y_test, y_pred)
 
             st.write("### Model Performance")
-            st.write(f"**Mean Squared Error (MSE):** {mse:.4f}")
+            st.write(f"Mean Squared Error (MSE): {mse:.4f}")
 
-            # Prediction chart
             chart_df = pd.DataFrame({
                 "Actual": y_test.flatten(),
                 "Predicted": y_pred.flatten()
@@ -98,7 +82,6 @@ else:
             st.write("### Prediction Comparison")
             st.line_chart(chart_df)
 
-            # Correlation matrix
             st.write("### Correlation Matrix")
             corr = df[numeric_cols].corr()
             st.dataframe(corr.style.background_gradient(cmap="Blues"))
