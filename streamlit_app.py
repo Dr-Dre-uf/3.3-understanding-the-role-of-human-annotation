@@ -44,6 +44,18 @@ This tool simulates how **human annotation inconsistencies** in genomics (e.g., 
 impact the reliability of AI models. 
 """)
 
+# Instructions Section
+with st.expander("How to use this tool"):
+    st.markdown("""
+    1. **Select Data Source**: Use the sidebar to choose between simulating a new mutation study or uploading your own experimental CSV data.
+    2. **Configure Parameters**:
+        * **Number of Researchers**: Simulates how many scientists are labeling the data. More researchers often lead to a stable consensus.
+        * **Annotation Variability**: Controls the 'noise' or disagreement level between researchers.
+    3. **Analyze Consistency**: Look at the **Intraclass Correlation (ICC)** score. A low score means researchers disagree significantly, which risks confusing the AI.
+    4. **Train AI Model**: The app automatically trains a Random Forest model on the 'Consensus' (average) label. Check the **MSE (Mean Squared Error)** to see how well the AI performs given the data quality.
+    5. **Visual Inspection**: Use the tabs at the bottom to compare researcher variance and visualize the AI's prediction accuracy.
+    """)
+
 # Security and Privacy Warning
 st.warning("**Data Privacy Notice:** Do not upload genetic data containing PII (Personally Identifiable Information) or sensitive patient records. This tool is for algorithmic analysis only.")
 
