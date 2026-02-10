@@ -1,5 +1,4 @@
 streamlit
 numpy
-Pillow
-opencv-python-headless
-scikit-image
+pandas
+scikit-learn
