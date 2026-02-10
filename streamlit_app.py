@@ -38,20 +38,20 @@ def train_rf_model(X_train, y_train, X_test):
 
 st.set_page_config(page_title="Genomic AI Reproducibility", layout="wide")
 
-st.title("🧬 AI-Driven Basic Science: Genetic Mutation Analysis")
+st.title("AI-Driven Basic Science: Genetic Mutation Analysis")
 st.markdown("""
 This tool simulates how **human annotation inconsistencies** in genomics (e.g., classifying protein-altering mutations) 
 impact the reliability of AI models. 
 """)
 
 # Security and Privacy Warning
-st.warning("**🔒 Data Privacy Notice:** Do not upload genetic data containing PII (Personally Identifiable Information) or sensitive patient records. This tool is for algorithmic analysis only.", icon="⚠️")
+st.warning("**Data Privacy Notice:** Do not upload genetic data containing PII (Personally Identifiable Information) or sensitive patient records. This tool is for algorithmic analysis only.")
 
 # ---------------------------------------------------------
 # Sidebar Configuration
 # ---------------------------------------------------------
 
-st.sidebar.header("🔬 Research Setup")
+st.sidebar.header("Research Setup")
 source = st.sidebar.radio(
     "Data Source", 
     ["Simulate Mutation Study", "Upload Researcher CSV"],
@@ -108,7 +108,7 @@ if df is not None and len(annotation_cols) > 0:
     m_col1, m_col2 = st.columns(2)
     
     with m_col1:
-        st.subheader("📊 Annotation Consistency")
+        st.subheader("Annotation Consistency")
         st.metric("Intraclass Correlation (ICC)", f"{icc_score:.3f}", 
                   help="ICC measures how much researchers agree. >0.75 is considered excellent reproducibility.")
         
@@ -118,7 +118,7 @@ if df is not None and len(annotation_cols) > 0:
             st.success("High Agreement: These annotations provide a stable foundation for AI training.")
 
     with m_col2:
-        st.subheader("🧪 AI Model Training")
+        st.subheader("AI Model Training")
         feature_col = st.selectbox("Select Feature for AI Training", [c for c in df.columns if c not in annotation_cols and c != "Consensus_Label"])
         
         test_size = st.slider("Test Set Size (%)", 10, 50, 20)
@@ -139,7 +139,7 @@ if df is not None and len(annotation_cols) > 0:
     # Visualizations
     # ---------------------------------------------------------
     
-    st.subheader("🔍 Visual Inspection")
+    st.subheader("Visual Inspection")
     tab1, tab2, tab3 = st.tabs(["Researcher Variance", "AI Predictions", "Raw Data"])
     
     with tab1:
